@@ -12,21 +12,21 @@ jobs:
 
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: armv7-unknown-linux-gnueabihf
-      - name: Install ARMv7 cross compiler and dependencies
+
+      - name: Install and Configure Cross-Compiler
         run: |
-          # Enable armhf multi-arch support
-          sudo dpkg --add-architecture armhf
-          sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libdbus-1-dev:armhf
-      - name: Build bitchat-tui release binary
-        env:
-          PKG_CONFIG_ALLOW_CROSS: "1"
-          PKG_CONFIG_PATH: "/usr/lib/arm-linux-gnueabihf/pkgconfig"
-          OPENSSL_NO_VENDOR: "1"
+          # Install the official cross compilation utility
+          cargo install cross --git https://github.com
+          
+          # Inject the necessary ARM prerequisites dynamically into the build image
+          mkdir -p .cross
+          echo '[target.armv7-unknown-linux-gnueabihf.runner]' > Cross.toml
+          echo 'prerequisites = ["dpkg --add-architecture armhf", "apt-get update", "apt-get install -y libdbus-1-dev:armhf pkg-config:armhf"]' >> Cross.toml
+
+      - name: Build bitchat-tui via Docker Container
         run: |
-          cargo build --target armv7-unknown-linux-gnueabihf --release
+          # Compile using cross which handles the target environment safely inside Docker
+          cross build --target armv7-unknown-linux-gnueabihf --release
 
       - name: Upload compiled binary asset
         uses: actions/upload-artifact@v4
