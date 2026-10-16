@@ -13,20 +13,19 @@ jobs:
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: armv7-unknown-linux-musleabihf
+          targets: armv7-unknown-linux-musleabi
 
-      - name: Install Cross utility (Pre-compiled Binary)
+      - name: Install Cross utility
         run: |
-          # Downloads pre-built binary instantly instead of compiling cross from source
-          curl -LLESs https://github.com | tar -xz -C /usr/local/bin
+          cargo install cross --git https://github.com
 
       - name: Build bitchat-tui Static Binary
         run: |
-          # Uses cross container environment to build a fully self-contained static binary
-          cross build --target armv7-unknown-linux-musleabihf --release
+          # Use musl target to build a 100% self-contained binary with zero GLIBC dependencies
+          cross build --target armv7-unknown-linux-musleabi --release
 
       - name: Upload compiled binary asset
         uses: actions/upload-artifact@v4
         with:
           name: bitchat-tui-kindle-static
-          path: target/armv7-unknown-linux-musleabihf/release/bitchat-tui
+          path: target/armv7-unknown-linux-musleabi/release/bitchat-tui
