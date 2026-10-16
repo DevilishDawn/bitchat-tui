@@ -12,17 +12,20 @@ jobs:
 
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-
       - name: Install and Configure Cross-Compiler
         run: |
-          # Install the official cross compilation utility
-          cargo install cross --git https://github.com
+          # Install the cross utility
+          cargo install cross --git https://github.com/cross-rs/cross
           
-          # Inject the necessary ARM prerequisites dynamically into the build image
-          mkdir -p .cross
-          echo '[target.armv7-unknown-linux-gnueabihf.runner]' > Cross.toml
-          echo 'prerequisites = ["dpkg --add-architecture armhf", "apt-get update", "apt-get install -y libdbus-1-dev:armhf pkg-config:armhf"]' >> Cross.toml
-
+          # Write the correct pre-build block format for cross-rs
+          cat << 'EOF' > Cross.toml
+          [target.armv7-unknown-linux-gnueabihf]
+          pre-build = [
+            "dpkg --add-architecture armhf",
+            "apt-get update",
+            "apt-get install --assume-yes libdbus-1-dev:armhf pkg-config:armhf"
+          ]
+          EOF
       - name: Build bitchat-tui via Docker Container
         run: |
           # Compile using cross which handles the target environment safely inside Docker
